@@ -12,7 +12,6 @@ def main():
         app = AppWindow()
         app.mainloop()
     except Exception:
-        # В --noconsole сборке трейсбек больше нигде не увидеть, кроме app.log.
         logger.exception("Необработанная ошибка, приложение завершилось аварийно")
         raise
 

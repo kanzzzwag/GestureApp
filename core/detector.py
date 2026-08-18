@@ -8,15 +8,11 @@ from mediapipe.tasks.python.vision.core.vision_task_running_mode import VisionTa
 
 from utils.paths import get_resource_dir
 
-# get_resource_dir() указывает на корень проекта при разработке и на
-# распакованную PyInstaller-папку (sys._MEIPASS) в собранном .exe.
 MODEL_PATH = os.path.join(get_resource_dir(), "models", "face_landmarker.task")
 
 
 class BlinkDetector:
     def __init__(self, model_path=MODEL_PATH):
-        # Начиная с mediapipe 1.0.0 legacy API `mediapipe.solutions` удалён,
-        # используем новый Tasks API (FaceLandmarker) вместо FaceMesh.
         options = vision.FaceLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=model_path),
             running_mode=VisionTaskRunningMode.VIDEO,
@@ -37,15 +33,13 @@ class BlinkDetector:
         self.FACE_LEFT = 234
         self.FACE_RIGHT = 454
 
-        # Точки для брови (Eyebrow Raise): верхняя точка брови и верхняя точка века
-        # для левого и правого глаза соответственно.
+        # Eyebrow Raise
         self.LEFT_EYEBROW_TOP = 105
         self.LEFT_EYE_TOP = 159
         self.RIGHT_EYEBROW_TOP = 334
         self.RIGHT_EYE_TOP = 386
 
-        # Точки для нормализации по масштабу лица (расстояние лоб-подбородок),
-        # чтобы метрика не зависела от расстояния пользователя до камеры.
+        # Нормализация по масштабу лица
         self.FACE_TOP = 10
         self.FACE_BOTTOM = 152
 
@@ -86,10 +80,7 @@ class BlinkDetector:
         return mouth_width / face_width if face_width != 0 else 0
 
     def calculate_eyebrow_raise(self, landmarks, frame_width, frame_height):
-        """Средняя дистанция бровь-глаз (лев. и прав.), нормированная на высоту лица
-        (лоб-подбородок), чтобы значение не менялось при приближении/удалении от камеры.
-        Чем выше значение, тем сильнее подняты брови.
-        """
+        """Дистанция бровь-глаз, нормированная на высоту лица."""
         left_eyebrow = landmarks[self.LEFT_EYEBROW_TOP]
         left_eye = landmarks[self.LEFT_EYE_TOP]
         right_eyebrow = landmarks[self.RIGHT_EYEBROW_TOP]

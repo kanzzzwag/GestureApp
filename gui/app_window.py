@@ -183,10 +183,8 @@ class AppWindow(ctk.CTk):
         if not self.preview_enabled.get():
             self.preview_label.configure(image=None, text="Превью выключено")
 
-    # ------------------------------------------------- обновление GUI (Tk-поток)
+    # ------------------------------------------------------------ обновление GUI
     def _poll_worker(self):
-        # Захват кадра и MediaPipe Tasks API выполняются в GestureWorker,
-        # здесь только читаем готовый результат - mainloop не блокируется.
         if self.worker.is_running:
             if self.worker.error:
                 self.status_label.configure(text=f"Ошибка: {self.worker.error}", text_color="red")
@@ -235,7 +233,7 @@ class AppWindow(ctk.CTk):
     def _make_tray_icon_image():
         if os.path.exists(ICON_PATH):
             return Image.open(ICON_PATH)
-        # Фолбэк, если assets/icon.png почему-то не найден.
+        # Фолбэк
         image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
         draw = ImageDraw.Draw(image)
         draw.ellipse((6, 6, 58, 58), fill=(0, 150, 90, 255))
@@ -251,8 +249,6 @@ class AppWindow(ctk.CTk):
         self.after(0, self._confirm_exit)
 
     def _confirm_exit(self):
-        # Окно может быть свёрнуто в трей в этот момент - показываем его,
-        # чтобы диалог подтверждения не появился "из ниоткуда".
         if not self.winfo_viewable():
             self.deiconify()
         self.lift()

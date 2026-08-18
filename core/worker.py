@@ -55,8 +55,7 @@ class GestureWorker:
 
     def _run(self):
         try:
-            # CAP_DSHOW обязателен: backend MSMF (дефолтный на Windows) зависает
-            # при открытии камеры не из главного потока (COM apartment issue).
+            # CAP_DSHOW: MSMF зависает при открытии камеры не из главного потока.
             cap = cv2.VideoCapture(self.config_manager.config["camera_index"], cv2.CAP_DSHOW)
         except Exception:
             logger.exception("Исключение при открытии камеры")
@@ -83,14 +82,10 @@ class GestureWorker:
         self.camera_ok = True
         logger.info("Камера и детектор инициализированы, распознавание активно")
 
-        # Одиночный неудачный cap.read() - частая, безобидная штука у веб-камер
-        # (особенно под нагрузкой от GUI), а не признак отключения камеры.
-        # Считаем связь потерянной только после нескольких подряд неудач.
+        # Разрыв связи с камерой считается только после нескольких неудач подряд
         MAX_CONSECUTIVE_READ_FAILURES = 15
         consecutive_read_failures = 0
 
-        # Аналогично для неожиданных ошибок обработки кадра (не должны ронять
-        # весь цикл распознавания из-за одного "плохого" кадра).
         MAX_CONSECUTIVE_FRAME_ERRORS = 15
         consecutive_frame_errors = 0
 

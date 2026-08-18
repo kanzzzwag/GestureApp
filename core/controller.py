@@ -9,31 +9,24 @@ class ActionController:
     def __init__(self, config_manager):
         self.cfg = config_manager.config
 
-        # Таймеры и счетчики из твоего кода
+        # Таймеры и счётчики
         self.is_eyes_closed = False
         self.blink_counter = 0
         self.first_blink_time = 0
         self.last_swipe_up_time = 0
         self.last_smile_time = 0
-
-        # Phase 1: таймеры для новых жестов
         self.last_eyebrow_time = 0
         self.last_wink_left_time = 0
         self.last_wink_right_time = 0
 
     def _fire(self, gesture_name, log_message):
-        """Выполняет действие, привязанное к жесту в config["gestures"].
-        Если для жеста не назначена клавиша (null в конфиге), действие не
-        выполняется - жест просто логируется (удобно для калибровки новых жестов).
-        """
+        """Выполняет действие, привязанное к жесту в config["gestures"]."""
         logger.info(log_message)
         key = self.cfg["gestures"].get(gesture_name)
         if key:
             try:
                 pyautogui.press(key)
             except Exception:
-                # Например, сработал pyautogui FAILSAFE (курсор в углу экрана) -
-                # не должно ронять весь поток распознавания из-за одного жеста.
                 logger.exception("Не удалось выполнить действие для жеста '%s' (клавиша '%s')", gesture_name, key)
 
     def process_actions(self, features):
@@ -50,14 +43,12 @@ class ActionController:
 
         ear_threshold = self.cfg["ear_threshold"]
 
-        # Различаем обычное моргание (закрыты ОБА глаза) и подмигивание (закрыт один,
-        # второй явно открыт) - иначе подмигивание могло бы ложно засчитаться как
-        # моргание из-за усреднённого avg_ear.
+        # Моргание vs подмигивание
         both_eyes_closed = left_ear < ear_threshold and right_ear < ear_threshold
         is_wink_left = left_ear < ear_threshold and right_ear > (ear_threshold + self.cfg["wink_open_margin"])
         is_wink_right = right_ear < ear_threshold and left_ear > (ear_threshold + self.cfg["wink_open_margin"])
 
-        # 1. Логика двойного моргания (Стрелка Вниз)[cite: 1]
+        # 1. Двойное моргание
         if both_eyes_closed:
             if not self.is_eyes_closed:
                 self.is_eyes_closed = True
@@ -77,20 +68,17 @@ class ActionController:
         if self.blink_counter == 1 and (current_time - self.first_blink_time) > self.cfg["double_blink_delay"]:
             self.blink_counter = 0
 
-        # 2. Логика открытия рта (Стрелка Вверх)[cite: 1]
+        # 2. Открытие рта
         if mar > self.cfg["mar_threshold"] and (current_time - self.last_swipe_up_time) > self.cfg["swipe_up_cooldown"]:
             self._fire("mouth_open", "Mouth Opened! Swipe Up Detected")
             self.last_swipe_up_time = current_time
 
-        # 3. Логика улыбки (Клавиша L)[cite: 1]
+        # 3. Улыбка
         if smile_ratio > self.cfg["smile_threshold"] and (current_time - self.last_smile_time) > self.cfg["smile_cooldown"]:
             self._fire("smile", "Smile Detected! Like Pressed")
             self.last_smile_time = current_time
 
-        # --- Phase 1 жесты. Действие берётся из config["gestures"]; пока там
-        # null - жест только логируется, ничего не нажимается. ---
-
-        # 4. Подмигивание левым/правым глазом (Wink)
+        # 4. Подмигивание
         if is_wink_left and (current_time - self.last_wink_left_time) > self.cfg["wink_cooldown"]:
             self._fire("wink_left", f"Wink Detected (Left) | left_ear={left_ear:.2f} right_ear={right_ear:.2f}")
             self.last_wink_left_time = current_time
@@ -98,7 +86,7 @@ class ActionController:
             self._fire("wink_right", f"Wink Detected (Right) | left_ear={left_ear:.2f} right_ear={right_ear:.2f}")
             self.last_wink_right_time = current_time
 
-        # 5. Поднятие бровей (Eyebrow Raise)
+        # 5. Поднятие бровей
         if eyebrow_raise > self.cfg["eyebrow_threshold"] and (current_time - self.last_eyebrow_time) > self.cfg["eyebrow_cooldown"]:
             self._fire("eyebrow_raise", f"Eyebrow Raise Detected | value={eyebrow_raise:.2f}")
             self.last_eyebrow_time = current_time

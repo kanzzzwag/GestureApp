@@ -1,7 +1,4 @@
-"""Глобальное логирование в файл (app.log). Обязательно для .exe, собранного
-в режиме --noconsole: там нет консоли (sys.stdout может быть None), поэтому
-print() ненадёжен, а необработанные ошибки без логов было бы вообще не
-отследить."""
+"""Глобальное логирование в файл (app.log)."""
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
@@ -32,7 +29,7 @@ def setup_logging():
     )
     root.addHandler(file_handler)
 
-    # В dev-режиме (запуск из python, не из .exe) дублируем в консоль для удобства.
+    # Dev-режим: дублируем в консоль
     if not is_frozen():
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
